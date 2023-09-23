@@ -44,14 +44,11 @@ model_dir = opt.model_dir
 smooth = opt.smooth
 pyramid_distillation_weight = opt.pyramid_distillation_weight
 
-log_txt = "../Log/NIPNet_update.txt"
 if not os.path.isdir(model_dir):
     os.mkdir(model_dir)
 
 if not os.path.isdir(log_dir):
     os.mkdir(log_dir)
-with open(log_txt, "w") as log:
-    log.write("Validation Dice log for NIPNet:\n")
 
 
 def train():
@@ -60,10 +57,6 @@ def train():
     loss_similarity = NCC(win=9)
     loss_smooth = smoothloss
     loss_pdl = PDLoss
-    # 日志文件
-    log_name = "NIPNet-iteration-" + str(iteration) + "-lr-" + str(lr)
-    print("log_name: ", log_name)
-    f = open(os.path.join(log_dir, log_name + ".txt"), "w")
 
     grid = generate_grid(imgshape)
     grid = torch.from_numpy(np.reshape(grid, (1,) + grid.shape)).to(device).float()
@@ -97,25 +90,6 @@ def train():
             if (step % opt.checkpoint == 0):
                 model_name = model_dir + '/NIPNet_' + str(step) + '.pth'
                 torch.save(model.state_dict(), model_name)
-                # Validation
-                with torch.no_grad():
-                    dice_total = []
-                    for (X, Y, X_label, Y_label) in val_loader:
-                        X = X.to(device)
-                        Y = Y.to(device)
-                        X_label = X_label.to(device)
-                        Y_label = Y_label.to(device)
-                        # X fixed   Y moving
-                        flow, intermediate_flows = model(X, Y)
-
-                        Y_X_label = transform_nearest(Y_label, flow.permute(0, 2, 3, 4, 1),
-                                                      grid).data.cpu().numpy()[0, 0, :, :, :]
-                        X_label = X_label.data.cpu().numpy()[0, 0, :, :, :]
-                        dice_score = compute_label_dice(Y_X_label, X_label)
-                        dice_total.append(dice_score)
-                    dice_total = np.array(dice_total)
-                    with open(log_txt, "a") as log:
-                        log.write("Validing:" + str(step) + ":" + str(dice_total.mean()) + "\n")
 
             step += 1
             if step > iteration:
