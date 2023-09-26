@@ -137,10 +137,6 @@ class NIPNet(nn.Module):
         self.grid_16 = torch.from_numpy(np.reshape(self.grid_16, (1,) + self.grid_16.shape)).to(device).float()
 
         self.transform = SpatialTransform().to(device)
-
-        # NIPNet-diff version
-        # self.diff_transform = DiffeomorphicTransform().to(device)
-
         self.up = torch.nn.Upsample(scale_factor=2, mode="trilinear", align_corners=True)
 
         self.deformer_lay1_feature = DeformerLayer(dim, self.enc_nf[4])  # 1 / 16
@@ -279,7 +275,6 @@ class NIPNet(nn.Module):
                                self.deformer_lay4_feature, self.deformer_lay5_feature, self.deformer_lay5_flow,
                                self.CBAM_lay5, self.transform, self.grid_2, self.grid_1, flow_lay4, flow4)
         flow = flow_lay5 + flow4
-        # flow = self.diff_transform(flow, self.grid_1)
         return flow, intermediate_flows
 
 
